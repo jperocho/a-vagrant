@@ -19,7 +19,7 @@ if not plugins_to_install.empty?
 end
 
 Vagrant.configure(VAGRANT_VERSION) do |config|
-  config.vm.box = "vm/betaV0.0.3"
+  config.vm.box = "vm/beta0.0.4"
 
   config.ssh.insert_key = false
 
@@ -71,7 +71,7 @@ Vagrant.configure(VAGRANT_VERSION) do |config|
   config.trigger.after :up do
     puts ""
     puts "  \033[38;5;220mSite is now up and running."
-    puts "  \033[38;5;220mNavigate to: \033[38;5;118mhttp://#{dirname}.local"
+    puts "  \033[38;5;220mNavigate to: \033[38;5;118mhttps://#{dirname}.local"
   end
 
 end
