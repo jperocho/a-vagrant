@@ -7,6 +7,11 @@ clone the repo
 git clone git@github.com:jperocho/a-vagrant.git <project_name>
 ```
 
+### Add vagrant box
+```
+vagrant box add vmbeta0.0.4.box --name vm/beta0.0.4
+```
+
 ### To use Bedrock
 Edit type in config.yml file
 
