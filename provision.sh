@@ -7,12 +7,22 @@ PASSWDDB="$(openssl rand -base64 12)"
 GREEN="\033[0;32m"
 RED="\033[0;31m"
 WWW_DIRECTORY="/vagrant/www"
-TYPE=$(grep -A3 'type:' /vagrant/config.yml | cut -d ":" -f 2 | sed 's/^[ \t]*//;s/[ \t]*$//')
+TYPE=$(grep -A3 'type:' /vagrant/config.yml | head -1 | cut -d ":" -f 2 | sed 's/^[ \t]*//;s/[ \t]*$//')
+SSL=$(grep -A3 'ssl:' /vagrant/config.yml | head -1 | cut -d ":" -f 2 | sed 's/^[ \t]*//;s/[ \t]*$//')
+
+if [ $SSL = true ];
+then
+PROTO="https"
+else
+PROTO="http"
+fi
 
 nginx-config() {
-    sudo rm /etc/nginx/sites-enabled/default
-    sudo rm /etc/nginx/sites-available/default
+    sudo rm /etc/nginx/sites-enabled/*
+    sudo rm /etc/nginx/sites-available/*
 
+    if [ $SSL = true ];
+    then
 sudo tee /etc/nginx/sites-available/$SITE_NAME > /dev/null <<'EOF'
 server {
         listen 80 default_server;
@@ -64,7 +74,52 @@ server {
 }
 
 EOF
+    else
+sudo tee /etc/nginx/sites-available/$SITE_NAME > /dev/null <<'EOF'
+server {
 
+        listen 80 default_server;
+        listen [::]:80 default_server;
+
+        root /vagrant/www/;
+
+        index index.html index.htm index.php;
+
+        server_name _;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+
+        location /phpmyadmin {
+          root /usr/share/;
+          index index.php;
+          try_files $uri $uri/ =404;
+
+          location ~ ^/phpmyadmin/(doc|sql|setup)/ {
+            deny all;
+          }
+
+          location ~ /phpmyadmin/(.+\.php)$ {
+            fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            include fastcgi_params;
+            include snippets/fastcgi-php.conf;
+          }
+         }
+
+        location ~ \.php$ {
+                include snippets/fastcgi-php.conf;
+                fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+        }
+
+        location ~ /\.ht {
+                deny all;
+        }
+}
+
+EOF
+    fi
     sudo ln -s /etc/nginx/sites-available/$SITE_NAME /etc/nginx/sites-enabled/
     sudo nginx -t && sudo systemctl restart nginx
 }
@@ -133,7 +188,7 @@ bedrock() {
     wp dotenv set DB_NAME ${SITE_NAME//./_}
     wp dotenv set DB_USER ${SITE_NAME//./_}
     wp dotenv set DB_PASSWORD ${PASSWDDB}
-    wp dotenv set WP_HOME https://${SITE_NAME}.local
+    wp dotenv set WP_HOME ${PROTO}://${SITE_NAME}.local
     # mv /home/vagrant/.env /vagrant/www
     echo ""
 

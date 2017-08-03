@@ -1,6 +1,11 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
+require 'yaml'
+
 VAGRANT_VERSION = "2"
+configuration = YAML::load(File.read("#{File.dirname(__FILE__)}/config.yml"))
+
+proto = configuration["config"]["ssl"] ? "https" : "http";
 
 dirname = File.basename(Dir.getwd)
 
@@ -21,7 +26,7 @@ end
 Vagrant.configure(VAGRANT_VERSION) do |config|
   config.vm.box = "vm/beta0.0.4"
 
-  config.ssh.insert_key = false
+  # config.ssh.insert_key = true
 
   # Configure hostname
   config.hostmanager.enabled = true
@@ -71,7 +76,7 @@ Vagrant.configure(VAGRANT_VERSION) do |config|
   config.trigger.after :up do
     puts ""
     puts "  \033[38;5;220mSite is now up and running."
-    puts "  \033[38;5;220mNavigate to: \033[38;5;118mhttps://#{dirname}.local"
+    puts "  \033[38;5;220mNavigate to: \033[38;5;118m#{proto}://#{dirname}.local"
   end
 
 end
