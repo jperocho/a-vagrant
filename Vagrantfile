@@ -24,9 +24,12 @@ if not plugins_to_install.empty?
 end
 
 Vagrant.configure(VAGRANT_VERSION) do |config|
-  config.vm.box = "vm/beta0.0.4"
 
-  # config.ssh.insert_key = true
+  config.vm.box = "vbcentos/beta0.0.4"
+
+  config.ssh.insert_key = false
+  config.ssh.username = 'vagrant'
+  config.ssh.password = 'vagrant'
 
   # Configure hostname
   config.hostmanager.enabled = true

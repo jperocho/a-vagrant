@@ -17,113 +17,6 @@ else
 PROTO="http"
 fi
 
-nginx-config() {
-    sudo rm /etc/nginx/sites-enabled/*
-    sudo rm /etc/nginx/sites-available/*
-
-    if [ $SSL = true ];
-    then
-sudo tee /etc/nginx/sites-available/$SITE_NAME > /dev/null <<'EOF'
-server {
-        listen 80 default_server;
-        listen [::]:80 default_server;
-        return 302 https://$host$request_uri;
-}
-server {
-
-        listen 443 ssl http2 default_server;
-        listen [::]:443 ssl http2 default_server;
-        include snippets/self-signed.conf;
-        include snippets/ssl-params.conf;
-
-        root /vagrant/www/;
-
-        index index.html index.htm index.php;
-
-        server_name _;
-
-        location / {
-                try_files $uri $uri/ =404;
-        }
-
-        location /phpmyadmin {
-          root /usr/share/;
-          index index.php;
-          try_files $uri $uri/ =404;
-
-          location ~ ^/phpmyadmin/(doc|sql|setup)/ {
-            deny all;
-          }
-
-          location ~ /phpmyadmin/(.+\.php)$ {
-            fastcgi_pass unix:/run/php/php7.0-fpm.sock;
-            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-            include fastcgi_params;
-            include snippets/fastcgi-php.conf;
-          }
-         }
-
-        location ~ \.php$ {
-                include snippets/fastcgi-php.conf;
-                fastcgi_pass unix:/run/php/php7.0-fpm.sock;
-        }
-
-        location ~ /\.ht {
-                deny all;
-        }
-}
-
-EOF
-    else
-sudo tee /etc/nginx/sites-available/$SITE_NAME > /dev/null <<'EOF'
-server {
-
-        listen 80 default_server;
-        listen [::]:80 default_server;
-
-        root /vagrant/www/;
-
-        index index.html index.htm index.php;
-
-        server_name _;
-
-        location / {
-                try_files $uri $uri/ =404;
-        }
-
-        location /phpmyadmin {
-          root /usr/share/;
-          index index.php;
-          try_files $uri $uri/ =404;
-
-          location ~ ^/phpmyadmin/(doc|sql|setup)/ {
-            deny all;
-          }
-
-          location ~ /phpmyadmin/(.+\.php)$ {
-            fastcgi_pass unix:/run/php/php7.0-fpm.sock;
-            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-            include fastcgi_params;
-            include snippets/fastcgi-php.conf;
-          }
-         }
-
-        location ~ \.php$ {
-                include snippets/fastcgi-php.conf;
-                fastcgi_pass unix:/run/php/php7.0-fpm.sock;
-        }
-
-        location ~ /\.ht {
-                deny all;
-        }
-}
-
-EOF
-    fi
-    sudo ln -s /etc/nginx/sites-available/$SITE_NAME /etc/nginx/sites-enabled/
-    sudo nginx -t && sudo systemctl restart nginx
-}
-
 wordpress() {
     echo -e "${GREEN}---------- Fetching Latest Wordpress Core"
     curl -O https://wordpress.org/latest.tar.gz
@@ -140,10 +33,6 @@ wordpress() {
     mysql -uroot -pmysql -e "CREATE USER ${SITE_NAME//./_}@localhost IDENTIFIED BY '${PASSWDDB}';"
     mysql -uroot -pmysql -e "GRANT ALL PRIVILEGES ON ${SITE_NAME//./_}.* TO '${SITE_NAME//./_}'@'localhost';"
     mysql -uroot -pmysql -e "FLUSH PRIVILEGES;"
-    echo ""
-
-    echo -e "${GREEN}---------- Setup nginx config"
-    nginx-config
     echo ""
 
     echo -e "${GREEN}---------- Adding DB credentials to wp-config.php"
@@ -204,7 +93,18 @@ bedrock() {
     cd /vagrant/www/
     composer update
     echo ""
+
+    echo -e "${GREEN}---------- Setup nginx config"
+    sudo sed -i '/root \/vagrant\/www\/;/c\    root /vagrant\/www\/web\/;' /etc/nginx/conf.d/default.conf
+    sudo systemctl restart nginx
+    sudo systemctl restart php-fpm
+    echo ""
 }
+
+bare() {
+    echo -e "${GREEN}---------- Setting up bare local server"
+}
+
 
 if [ -d "$WWW_DIRECTORY" ];
 then
@@ -219,6 +119,9 @@ else
         ;;
     "bedrock")
         bedrock
+        ;;
+    "bare")
+        bare
         ;;
     *)
         echo "Config type not recognize"
