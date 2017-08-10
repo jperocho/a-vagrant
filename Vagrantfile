@@ -54,7 +54,8 @@ Vagrant.configure(VAGRANT_VERSION) do |config|
     path: "provision.sh",
     args: "#{dirname}",
     privileged: false,
-    keep_color: true
+    keep_color: true,
+    binary: true
 
   # Triggers
   config.trigger.before :up do
