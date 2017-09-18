@@ -1,13 +1,26 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
-require 'yaml'
 
-VAGRANT_VERSION = "2"
-configuration = YAML::load(File.read("#{File.dirname(__FILE__)}/config.yml"))
+boxname = "dev.box"
+guestip = "192.168.33.20"
+# Operating System Module
+module OS
+  def OS.windows?
+      (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM) != nil
+  end
 
-proto = configuration["config"]["ssl"] ? "https" : "http";
+  def OS.mac?
+      (/darwin/ =~ RUBY_PLATFORM) != nil
+  end
 
-dirname = File.basename(Dir.getwd)
+  def OS.unix?
+      !OS.windows?
+  end
+
+  def OS.linux?
+      OS.unix? and not OS.mac?
+  end
+end
 
 # Checks plugin dependency
 required_plugins = %w( vagrant-hostmanager vagrant-triggers )
@@ -23,37 +36,19 @@ if not plugins_to_install.empty?
   end
 end
 
-Vagrant.configure(VAGRANT_VERSION) do |config|
+Vagrant.configure("2") do |config|
 
-  config.vm.box = "vbcentos/beta0.0.4"
-
-  config.ssh.insert_key = false
+  config.vm.box = "dev.box/v.0.0.2"
 
   # Configure hostname
-  config.hostmanager.enabled = true
-  config.hostmanager.manage_host = true
-  config.hostmanager.manage_guest = true
-  config.hostmanager.ignore_private_ip = false
-  config.hostmanager.include_offline = false
-  config.vm.define dirname do |node|
-    node.vm.hostname = "#{dirname}.local"
-    node.vm.network :private_network, ip: "192.168.13.37"
-    node.hostmanager.aliases = ["#{dirname}.local", "www.#{dirname}.local"]
-  end
+  config.vm.network :private_network, ip: guestip
 
-  # Configure Network
-  config.vm.network "forwarded_port", guest: 80, host: 8080
+
   config.vm.provider "virtualbox" do |vb|
-    vb.name = dirname
+    vb.name = "devbox"
+    vb.memory = "1024"
+    vb.cpus = 2
   end
-
-  # Provision
-  config.vm.provision "shell",
-    path: "provision.sh",
-    args: "#{dirname}",
-    privileged: false,
-    keep_color: true,
-    binary: true
 
   # Triggers
   config.trigger.before :up do
@@ -76,9 +71,19 @@ Vagrant.configure(VAGRANT_VERSION) do |config|
   end
 
   config.trigger.after :up do
-    puts ""
-    puts "  \033[38;5;220mSite is now up and running."
-    puts "  \033[38;5;220mNavigate to: \033[38;5;118m#{proto}://#{dirname}.local"
+    puts "Setting up Hostname. It might require your computers password."
+    if OS.windows?
+      exec("sudo echo " + guestip + "    dev.box >> /etc/hosts")
+    elsif OS.mac?
+      exec("sudo echo " + guestip + "    dev.box >> /etc/hosts")
+      puts "Setup done."
+    elsif OS.unix?
+      exec("sudo echo " + guestip + "    dev.box >> /etc/hosts")
+    elsif OS.linux?
+      exec("sudo echo " + guestip + "    dev.box >> /etc/hosts")
+    else
+        puts "Vagrant launched from unknown platform."
+    end
   end
 
 end
