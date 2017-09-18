@@ -34,35 +34,35 @@ USAGE: vagrant addsite [sitename] [base-options] [theme]
 $ vagrant addsite samplesite
 ```
 Access it on http://samplesite.dev.box
-#### Creates a wordpress samplesite.
+#### Creates a wordpress site.
 ```
-$ vagrant addsite samplesite --wordpress
+$ vagrant addsite wpsite --wordpress
 ```
-Access it on http://samplesite.dev.box
-#### Creates a wordpress samplesite with jointswp theme.
+Access it on http://wpsite.dev.box
+#### Creates a wordpress site with jointswp theme.
 ```
-$ vagrant addsite samplesite --wordpress --jointswp
+$ vagrant addsite wpsitejointswp --wordpress --jointswp
 ```
-Access it on http://samplesite.dev.box
-#### Creates a wordpress samplesite with Sage theme.
+Access it on http://wpsitejointswp.dev.box
+#### Creates a wordpress site with Sage theme.
 ```
-$ vagrant addsite samplesite --wordpress --sage
+$ vagrant addsite wpsitesage --wordpress --sage
 ```
-Access it on http://samplesite.dev.box
-#### Creates a bedrock wordpress samplesite
+Access it on http://wpsitesage.dev.box
+#### Creates a bedrock wordpress site
 ```
-$ vagrant addsite samplesite --bedrock
+$ vagrant addsite brsite --bedrock
 ```
-Access it on http://samplesite.dev.box
-#### Creates a bedrock wordpress samplesite with Sage theme
+Access it on http://brsite.dev.box
+#### Creates a bedrock wordpress site with Sage theme
 ```
-$ vagrant addsite samplesite --bedrock --sage
+$ vagrant addsite brsitesage --bedrock --sage
 ```
-Access it on http://samplesite.dev.box
-#### Creates a bedrock wordpress samplesite with JointsWP theme
+Access it on http://brsitesage.dev.box
+#### Creates a bedrock wordpress site with JointsWP theme
 ```
-$ vagrant addsite samplesite --bedrock --jointswp
+$ vagrant addsite brsitejointswp --bedrock --jointswp
 ```
-Access it on http://samplesite.dev.box
+Access it on http://brsitejointswp.dev.box
 
 ### Note: You can't create multiple site with the same name.
