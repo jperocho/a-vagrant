@@ -1,0 +1,258 @@
+VERSION = "2"
+
+# Operating System Module
+module OS
+  def OS.windows?
+      (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM) != nil
+  end
+
+  def OS.mac?
+      (/darwin/ =~ RUBY_PLATFORM) != nil
+  end
+
+  def OS.unix?
+      !OS.windows?
+  end
+
+  def OS.linux?
+      OS.unix? and not OS.mac?
+  end
+end
+
+# Add Site Command
+class AddSiteCommand < Vagrant.plugin(VERSION, :command)
+
+  def self.synopsis
+    "DEV BOX: Adds site to VM Box Dev"
+  end
+
+  def execute
+
+    machine = @env.machine(:default, :virtualbox)
+
+    if machine.state.id != :running
+      @env.ui.error("Machine must be running. Try: vagrant up")
+      return 1
+    end
+    options = {}
+    options[:help] = false
+    options[:base] = "bare"
+
+    opts = OptionParser.new do |o|
+      o.banner = "Usage: vagrant addsite [site-name] [opts]"
+      o.separator ""
+
+      o.on("--bedrock", "Use Wordpres Bedrock as a base") do |b|
+        options[:base] = "bedrock"
+      end
+
+      o.on("--wordpress", "Use Wordpress Vanilla as a base") do |b|
+        options[:base] = "wordpress"
+      end
+
+      o.on("--jointswp", "Use JointsWP Template for wordpress") do |b|
+        options[:template] = "jointswp"
+      end
+
+      o.on("--sage", "Use Sage Template for wordpress") do |b|
+        options[:template] = "sage"
+      end
+
+      o.on("-h","--help", "Prints Dev Box Help") do |b|
+        options[:help] = true
+        puts o
+        exit
+      end
+    end
+
+    argv = parse_options(opts)
+
+    if argv[0] == nil && options[:help] == false
+      puts "You must specify a site name. eg: vagrant addsite mynewsite"
+      puts opts
+      return 1
+    end
+
+    siteName = argv[0]
+
+    machine.communicate.execute("checksite " + siteName) do |type, data|
+      options[:siteAvailable] = data.strip
+      if options[:siteAvailable] == "1"
+        puts siteName + " is an active site. Choose a different site name."
+        return 1
+      end
+    end
+
+    if options[:base] == 'bare' || options[:base] == 'wordpress'
+      command = "sudo initsite " + siteName
+      machine.communicate.execute(command) do |type, data|
+        @env.ui.info(data)
+      end
+    end
+
+    if options[:base] == 'wordpress'
+
+      puts "Setting up vanilla wordpress"
+      if options[:template]
+        command = "initwordpress " + siteName + " " + options[:template]
+      else
+        command = "initwordpress " + siteName
+      end
+      machine.communicate.execute(command) do |type, data|
+        @env.ui.info(data)
+      end
+
+    end
+
+    if options[:base] == 'bedrock'
+
+      command = "sudo initsitebr " + siteName
+      machine.communicate.execute(command) do |type, data|
+        @env.ui.info(data)
+      end
+
+      puts "Setting up Roots/bedrock WP"
+      if options[:template]
+        command = "initbedrockwp " + siteName + " " + options[:template]
+      else
+        command = "initbedrockwp " + siteName
+      end
+      machine.communicate.execute(command) do |type, data|
+        @env.ui.info(data)
+      end
+    end
+
+    command = 'hostname -I | cut -d " " -f 2'
+    machine.communicate.execute(command) do |type, data|
+      options[:guestip] = data.strip
+    end
+
+    puts "Setting up Hostname"
+    if OS.windows?
+      exec("sudo echo " + options[:guestip] + "    " + siteName + ".dev.box >> /etc/hosts")
+    elsif OS.mac?
+      exec("sudo echo " + options[:guestip] + "    " + siteName + ".dev.box >> /etc/hosts")
+      puts "Settup done."
+    elsif OS.unix?
+      exec("sudo echo " + options[:guestip] + "    " + siteName + ".dev.box >> /etc/hosts")
+    elsif OS.linux?
+      exec("sudo echo " + options[:guestip] + "    " + siteName + ".dev.box >> /etc/hosts")
+    else
+        puts "Vagrant launched from unknown platform."
+    end
+
+    return 0
+  end
+end
+
+# Modify Site Command
+class ModifySiteCommand < Vagrant.plugin(VERSION, :command)
+  def self.synopsis
+    "DEV BOX: Modify a site to VM Box Dev"
+  end
+
+  def execute
+    machine = @env.machine(:default, :virtualbox)
+
+    if machine.state.id != :running
+      @env.ui.error("Machine must be running. Try: vagrant up")
+      return 1
+    end
+    options = {}
+    options[:help] = false
+
+    opts = OptionParser.new do |o|
+      o.banner = "Usage: vagrant modsite [site-name] [opts]"
+      o.separator ""
+
+      o.on("--addjointswp", "Add JointsWP Template for wordpress") do |b|
+        options[:addtemplate] = "jointswp"
+      end
+
+      o.on("--addsage", "Add Sage Template for wordpress") do |b|
+        options[:addtemplate] = "sage"
+      end
+
+      o.on("-h","--help", "Prints Dev Box Help") do |b|
+        options[:help] = true
+        puts o
+        exit
+      end
+    end
+
+    argv = parse_options(opts)
+
+    if argv[0] == nil && options[:help] == false
+      puts "You must specify a site name. eg: vagrant modsite [site-name]"
+      puts opts
+      return 1
+    end
+
+    siteName = argv[0]
+
+    machine.communicate.execute("checksite " + siteName) do |type, data|
+      options[:siteAvailable] = data.strip
+      if options[:siteAvailable] == "0"
+        puts "Cannot find " + siteName + ". Be sure that the site is active."
+        return 1
+      end
+    end
+
+
+
+  end
+end
+
+# Update Dev Box
+class UpdateDevBoxCommand < Vagrant.plugin(VERSION, :command)
+  def self.synopsis
+    "DEV BOX: Update Dev Box Scripts"
+  end
+
+  def execute
+    machine = @env.machine(:default, :virtualbox)
+
+    if machine.state.id != :running
+      @env.ui.error("Machine must be running. Try: vagrant up")
+      return 1
+    end
+    options = {}
+    options[:help] = false
+
+    opts = OptionParser.new do |o|
+      o.banner = "Usage: vagrant updatedevbox"
+      o.separator ""
+
+      o.on("-h","--help", "Prints Dev Box Help") do |b|
+        options[:help] = true
+        puts o
+        exit
+      end
+    end
+
+    argv = parse_options(opts)
+
+    machine.communicate.execute("cd ~/bin/ && git pull origin master && sudo ln -sf /home/vagrant/bin/init* /usr/bin") do |type, data|
+      @env.ui.info(data)
+    end
+
+  end
+end
+
+class InitCommand < Vagrant.plugin(VERSION)
+  name "Dev Box Commands"
+
+  command "updatedevbox" do
+    UpdateDevBoxCommand
+  end
+
+  command "addsite" do
+    AddSiteCommand
+  end
+
+  command "modsite" do
+    ModifySiteCommand
+  end
+end
+
+
