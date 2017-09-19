@@ -132,11 +132,10 @@ class AddSiteCommand < Vagrant.plugin(VERSION, :command)
       exec("sudo echo " + options[:guestip] + "    " + siteName + ".dev.box >> /etc/hosts")
     elsif OS.mac?
       exec("sudo echo " + options[:guestip] + "    " + siteName + ".dev.box >> /etc/hosts")
-      puts "Settup done."
     elsif OS.unix?
-      exec("sudo echo " + options[:guestip] + "    " + siteName + ".dev.box >> /etc/hosts")
+      exec("sudo bash -c 'echo " + options[:guestip] + "    " + siteName + ".dev.box >> /etc/hosts'")
     elsif OS.linux?
-      exec("sudo echo " + options[:guestip] + "    " + siteName + ".dev.box >> /etc/hosts")
+      exec("sudo bash -c 'echo " + options[:guestip] + "    " + siteName + ".dev.box >> /etc/hosts'")
     else
         puts "Vagrant launched from unknown platform."
     end

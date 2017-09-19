@@ -78,9 +78,9 @@ Vagrant.configure("2") do |config|
       exec("sudo echo " + guestip + "    dev.box >> /etc/hosts")
       puts "Setup done."
     elsif OS.unix?
-      exec("sudo echo " + guestip + "    dev.box >> /etc/hosts")
+      exec("sudo bash -c 'echo " + guestip + "    dev.box >> /etc/hosts'")
     elsif OS.linux?
-      exec("sudo echo " + guestip + "    dev.box >> /etc/hosts")
+      exec("sudo bash -c 'echo " + guestip + "    dev.box >> /etc/hosts'")
     else
         puts "Vagrant launched from unknown platform."
     end
